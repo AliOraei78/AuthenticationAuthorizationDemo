@@ -75,6 +75,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<RefreshTokenService>();
 
 builder.Services.AddAuthentication(options =>
 {

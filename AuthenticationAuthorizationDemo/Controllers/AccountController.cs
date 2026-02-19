@@ -14,15 +14,18 @@ namespace AuthenticationAuthorizationDemo.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly JwtTokenService _jwtTokenService;   // ← new
+        private readonly RefreshTokenService _refreshTokenService;
 
         public AccountController(
             UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
-            JwtTokenService jwtTokenService)
+            JwtTokenService jwtTokenService, 
+            RefreshTokenService refreshTokenService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _jwtTokenService = jwtTokenService;
+            _refreshTokenService = refreshTokenService;
         }
 
         [HttpPost("register")]
@@ -65,28 +68,52 @@ namespace AuthenticationAuthorizationDemo.Controllers
                 return BadRequest(ModelState);
             }
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
+            var result = await _signInManager.CheckPasswordSignInAsync(
+                user,
+                model.Password,
+                lockoutOnFailure: true);
 
             if (!result.Succeeded)
             {
                 if (result.IsLockedOut)
-                    return BadRequest(new { Message = "Account locked out." });
+                    return BadRequest(new { Message = "Account locked out due to too many failed attempts." });
 
                 ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                 return BadRequest(ModelState);
             }
 
-            // Get roles
+            // Login successful
             var roles = await _userManager.GetRolesAsync(user);
 
-            // Generate JWT
-            var token = _jwtTokenService.GenerateToken(user, roles);
+            // Generate access token
+            var accessToken = _jwtTokenService.GenerateToken(user, roles);
+
+            // Create and store refresh token → get the real saved token
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(user.Id, ip);
 
             return Ok(new
             {
-                Message = "Login successful.",
-                Token = token,
-                ExpiresInMinutes = 30
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                ExpiresInMinutes = 15
+            });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto request)
+        {
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+            var (newAccessToken, newRefreshToken, error) = await _refreshTokenService.RefreshAsync(request.RefreshToken, ip);
+
+            if (error != null)
+                return BadRequest(new { Message = error });
+
+            return Ok(new
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken
             });
         }
 

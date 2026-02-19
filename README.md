@@ -81,3 +81,13 @@ Database file `app.db` is now created in the project root with all standard Iden
   - Require signed tokens and expiration
 - Aligned with OWASP JWT best practices: no sensitive data in payload, strong validation, no "none" algorithm support
 - Tested token integrity, expiration enforcement, and claim presence
+
+### Day 6 – Refresh Token Implementation with Rotation and Revocation
+
+- Created `RefreshToken` entity with hashed storage for security
+- Implemented secure random generation of long-lived refresh tokens
+- Stored tokens in database with expiration and revocation checks
+- Added token rotation: revoke old token and issue new one on every refresh
+- Created `/api/account/refresh` endpoint
+- Implemented revocation of all tokens for a user
+- Security features: hashing, IP logging, rotation to mitigate replay and leakage risks

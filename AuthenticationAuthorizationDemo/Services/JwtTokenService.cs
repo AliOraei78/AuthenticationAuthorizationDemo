@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace AuthenticationAuthorizationDemo.Services
@@ -50,6 +51,30 @@ namespace AuthenticationAuthorizationDemo.Services
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        public string HashRefreshToken(string token)
+        {
+            using var sha256 = SHA256.Create();
+            var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
+            return Convert.ToBase64String(hashBytes);
+        }
+
+        public (string AccessToken, string RefreshToken) GenerateTokenPair(IdentityUser user, IList<string> roles)
+        {
+            var accessToken = GenerateToken(user, roles);
+
+            var refreshToken = GenerateRefreshToken();
+
+            return (accessToken, refreshToken);
         }
     }
 }
