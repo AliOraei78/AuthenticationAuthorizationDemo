@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using AuthenticationAuthorizationDemo.Services;
 
 namespace AuthenticationAuthorizationDemo.Controllers
 {
@@ -12,13 +13,16 @@ namespace AuthenticationAuthorizationDemo.Controllers
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly JwtTokenService _jwtTokenService;   // ← new
 
         public AccountController(
             UserManager<IdentityUser> userManager,
-            SignInManager<IdentityUser> signInManager)
+            SignInManager<IdentityUser> signInManager,
+            JwtTokenService jwtTokenService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _jwtTokenService = jwtTokenService;
         }
 
         [HttpPost("register")]
@@ -54,7 +58,6 @@ namespace AuthenticationAuthorizationDemo.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Find user first to provide better error messages
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
@@ -62,33 +65,29 @@ namespace AuthenticationAuthorizationDemo.Controllers
                 return BadRequest(ModelState);
             }
 
-            var result = await _signInManager.PasswordSignInAsync(
-                user,
-                model.Password,
-                isPersistent: model.RememberMe,   // persistent = long-lived cookie
-                lockoutOnFailure: true);           // enable lockout after failures
+            var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
 
-            if (result.Succeeded)
+            if (!result.Succeeded)
             {
-                // Optional: Refresh security stamp if needed (rarely here)
-                return Ok(new { Message = "Login successful." });
+                if (result.IsLockedOut)
+                    return BadRequest(new { Message = "Account locked out." });
+
+                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                return BadRequest(ModelState);
             }
 
-            if (result.IsLockedOut)
-            {
-                return BadRequest(new
-                {
-                    Message = "Account locked out due to too many failed attempts. Try again later."
-                });
-            }
+            // Get roles
+            var roles = await _userManager.GetRolesAsync(user);
 
-            if (result.RequiresTwoFactor)
-            {
-                return BadRequest(new { Message = "Two-factor authentication required." });
-            }
+            // Generate JWT
+            var token = _jwtTokenService.GenerateToken(user, roles);
 
-            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-            return BadRequest(ModelState);
+            return Ok(new
+            {
+                Message = "Login successful.",
+                Token = token,
+                ExpiresInMinutes = 30
+            });
         }
 
         [HttpPost("logout")]

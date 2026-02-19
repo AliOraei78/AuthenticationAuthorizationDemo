@@ -58,3 +58,13 @@ Database file `app.db` is now created in the project root with all standard Iden
 - Introduced basic protected endpoint with `[Authorize]` attribute
 - Demonstrated cookie-based session management & termination
 - Tested full flow: register > login > access protected > logout > access denied
+
+### Day 4 – JWT Integration with Identity
+
+- Installed `Microsoft.AspNetCore.Authentication.JwtBearer`
+- Created `JwtSettings` configuration class and bound from appsettings.json
+- Implemented `JwtTokenService` for generating signed JWTs with claims (sub, email, roles)
+- Configured JWT bearer authentication scheme as default in Program.cs
+- Updated `Login` endpoint to validate credentials via Identity > issue JWT on success
+- Replaced cookie-based auth with stateless token-based authentication
+- Tested token issuance and bearer authentication via Swagger
