@@ -36,3 +36,13 @@ The project follows a structured daily progression, making it easy to follow, un
 - Enabled Swagger UI for API testing
 
 Database file `app.db` is now created in the project root with all standard Identity tables.
+
+### Day 2 – ASP.NET Core Identity Basics: Registration & Login
+
+- Created DTOs: `RegisterDto` and `LoginDto`
+- Implemented `AccountController` with:
+  - `POST api/account/register` — user creation with secure password hashing
+  - `POST api/account/login` — password sign-in using SignInManager
+- Automatic password policy enforcement (length, complexity)
+- Basic input validation and error reporting
+- Tested endpoints via Swagger
