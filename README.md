@@ -46,3 +46,15 @@ Database file `app.db` is now created in the project root with all standard Iden
 - Automatic password policy enforcement (length, complexity)
 - Basic input validation and error reporting
 - Tested endpoints via Swagger
+
+### Day 3 – Login / Logout Flows & Session Management
+
+- Enhanced `Login` endpoint:
+  - Used `SignInManager.PasswordSignInAsync` with proper parameters
+  - Supported "Remember Me" (persistent vs. session cookie)
+  - Enabled lockout on failure
+  - Improved error messages (invalid credentials, lockout, 2FA hint)
+- Added secure `Logout` endpoint using `SignInManager.SignOutAsync()`
+- Introduced basic protected endpoint with `[Authorize]` attribute
+- Demonstrated cookie-based session management & termination
+- Tested full flow: register > login > access protected > logout > access denied
