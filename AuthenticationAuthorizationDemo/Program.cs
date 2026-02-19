@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Security.Claims;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,27 +80,48 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
-    var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
+        ?? throw new InvalidOperationException("JWT settings missing");
 
     options.TokenValidationParameters = new TokenValidationParameters
     {
+        // Mandatory validations
         ValidateIssuer = true,
-        ValidIssuer = jwtSettings?.Issuer,
+        ValidIssuer = jwtSettings.Issuer,
 
         ValidateAudience = true,
-        ValidAudience = jwtSettings?.Audience,
+        ValidAudience = jwtSettings.Audience,
 
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtSettings?.SecretKey ?? throw new InvalidOperationException("SecretKey missing"))),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
 
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero,  // no tolerance for clock drift in demo
-        RequireExpirationTime = true
+        ClockSkew = TimeSpan.FromSeconds(5),      // Small tolerance only (default is 5 min → reduced)
+
+        // Prevent common attacks
+        RequireSignedTokens = true,
+        RequireExpirationTime = true,
+        ValidateActor = false,                    // Usually not needed for API
+        NameClaimType = JwtRegisteredClaimNames.UniqueName,
+        RoleClaimType = ClaimTypes.Role
+    };
+
+    // Optional: Reject "none" algorithm explicitly
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = context =>
+        {
+            // Additional custom checks if needed (e.g., check jti against blacklist later)
+            return Task.CompletedTask;
+        },
+        OnAuthenticationFailed = context =>
+        {
+            // Log failures in production
+            return Task.CompletedTask;
+        }
     };
 });
 

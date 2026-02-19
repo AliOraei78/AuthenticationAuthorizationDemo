@@ -68,3 +68,16 @@ Database file `app.db` is now created in the project root with all standard Iden
 - Updated `Login` endpoint to validate credentials via Identity > issue JWT on success
 - Replaced cookie-based auth with stateless token-based authentication
 - Tested token issuance and bearer authentication via Swagger
+
+### Day 5 – JWT Security & Claims Hardening
+
+- Moved secret key to User Secrets (avoid committing to Git)
+- Reduced access token lifetime to 15 minutes (short-lived tokens)
+- Added standard claims: sub, email, unique_name, jti, iat, auth_time
+- Included role claims via ClaimTypes.Role for [Authorize(Roles = "...")]
+- Strengthened TokenValidationParameters:
+  - Strict issuer, audience, lifetime, and signing key checks
+  - Minimal clock skew (5 seconds)
+  - Require signed tokens and expiration
+- Aligned with OWASP JWT best practices: no sensitive data in payload, strong validation, no "none" algorithm support
+- Tested token integrity, expiration enforcement, and claim presence
