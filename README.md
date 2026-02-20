@@ -91,3 +91,17 @@ Database file `app.db` is now created in the project root with all standard Iden
 - Created `/api/account/refresh` endpoint
 - Implemented revocation of all tokens for a user
 - Security features: hashing, IP logging, rotation to mitigate replay and leakage risks
+
+### Day 7 – Refresh Token Error Handling & Improvements
+
+- Enhanced error handling in `RefreshAsync`:
+  - Precise checks for revoked, expired, not found, and empty/missing tokens
+  - Clear, user-friendly error messages (in English for consistency with project documentation)
+- Added `/api/account/revoke` endpoint to allow authenticated users to manually revoke all their refresh tokens
+- Implemented simple console logging for successful refresh operations and rotation events (useful for debugging)
+- Comprehensive testing of failure scenarios:
+  - Expired refresh token
+  - Revoked refresh token
+  - Invalid / tampered token
+  - Missing or empty refresh token
+- Ensured rotation continues to invalidate previous tokens reliably

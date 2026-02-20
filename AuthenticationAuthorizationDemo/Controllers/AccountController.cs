@@ -1,9 +1,11 @@
 ﻿using AuthenticationAuthorizationDemo.Models;
+using AuthenticationAuthorizationDemo.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Threading.Tasks;
-using AuthenticationAuthorizationDemo.Services;
 
 namespace AuthenticationAuthorizationDemo.Controllers
 {
@@ -136,6 +138,19 @@ namespace AuthenticationAuthorizationDemo.Controllers
                 Message = "This is a protected resource – you are authenticated.",
                 UserEmail = User.Identity?.Name
             });
+        }
+
+        [HttpPost("revoke")]
+        [Authorize]  // Only authenticated users can revoke their own tokens
+        public async Task<IActionResult> Revoke()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // or "sub" from JWT
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            await _refreshTokenService.RevokeAllForUserAsync(userId);
+
+            return Ok(new { Message = "All your refresh tokens have been revoked." });
         }
     }
 }
