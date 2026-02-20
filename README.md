@@ -144,3 +144,12 @@ Database file `app.db` is now created in the project root with all standard Iden
 - Created permission-based policies (e.g., `CanViewUsers`, `CanManageUsers`) that require specific `"Permission"` claims
 - Implemented `PermissionsTestController` with endpoints restricted by permission policies (rather than just roles)
 - Achieved fully dynamic RBAC: new permissions or role changes can be applied without modifying code — only role claims need updating
+
+### Day 11 – Advanced Security and Best Practices
+
+- Implemented endpoint rate limiting on `/login` and `/refresh` to defend against brute-force attacks using AspNetCoreRateLimit
+- Enabled OWASP-recommended security response headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, CSP)
+- Strengthened JWT bearer configuration: reduced clock skew to 5 seconds, enforced signed tokens, mandatory expiration, and protection against "none" algorithm
+- Added basic audit logging for security-sensitive operations (login, refresh, revoke) with user ID and IP address
+- Reviewed and confirmed no sensitive information is exposed in API responses
+- Conducted basic security testing for common vulnerabilities (token replay, tampering, brute force)

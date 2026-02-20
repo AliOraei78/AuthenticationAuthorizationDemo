@@ -1,3 +1,4 @@
+using AspNetCoreRateLimit;
 using AuthenticationAuthorizationDemo.Authorization;
 using AuthenticationAuthorizationDemo.Configuration;
 using AuthenticationAuthorizationDemo.Data;
@@ -81,6 +82,11 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSet
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<RefreshTokenService>();
 
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+builder.Services.AddInMemoryRateLimiting();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -113,6 +119,8 @@ builder.Services.AddAuthentication(options =>
         NameClaimType = JwtRegisteredClaimNames.UniqueName,
         RoleClaimType = ClaimTypes.Role
     };
+
+    options.RequireHttpsMetadata = true;
 
     // Optional: Reject "none" algorithm explicitly
     options.Events = new JwtBearerEvents
@@ -171,9 +179,28 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseIpRateLimiting();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'");
+    if (context.Request.Path.StartsWithSegments("/api/account/login") ||
+        context.Request.Path.StartsWithSegments("/api/account/refresh") ||
+        context.Request.Path.StartsWithSegments("/api/account/revoke"))
+    {
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] {context.Request.Method} {context.Request.Path} - User: {userId} - IP: {ip}");
+    }
+    await next();
+});
 
 app.Run();
