@@ -88,7 +88,7 @@ namespace AuthenticationAuthorizationDemo.Controllers
             var roles = await _userManager.GetRolesAsync(user);
 
             // Generate access token
-            var accessToken = _jwtTokenService.GenerateToken(user, roles);
+            var accessToken = await _jwtTokenService.GenerateToken(user);
 
             // Create and store refresh token → get the real saved token
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";

@@ -1,6 +1,7 @@
 using AuthenticationAuthorizationDemo.Authorization;
 using AuthenticationAuthorizationDemo.Configuration;
 using AuthenticationAuthorizationDemo.Data;
+using AuthenticationAuthorizationDemo.Models;
 using AuthenticationAuthorizationDemo.Seeders;
 using AuthenticationAuthorizationDemo.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -140,6 +141,12 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("RequireClaimEmailConfirmed", policy =>
         policy.RequireClaim("email_verified", "true"));
+
+    options.AddPolicy("CanManageUsers", policy =>
+    policy.RequireClaim("Permission", Permissions.CanManageUsers));
+
+    options.AddPolicy("CanViewUsers", policy =>
+        policy.RequireClaim("Permission", Permissions.CanViewUsers));
 });
 
 builder.Services.AddSingleton<IAuthorizationHandler, MinimumAgeHandler>();
@@ -159,7 +166,7 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = string.Empty;  // optional: open at root URL /
     });
     using var scope = app.Services.CreateScope();
-    await IdentityDataSeeder.SeedRolesAndAdminUser(scope.ServiceProvider);
+    await IdentityDataSeeder.SeedRolesAndPermissions(scope.ServiceProvider);
 }
 
 app.UseHttpsRedirection();

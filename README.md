@@ -120,7 +120,6 @@ Database file `app.db` is now created in the project root with all standard Iden
   - Successful access with correct role
   - 403 Forbidden response when role requirements are not met
 
-
 ### Day 9 – Implementing Policy-Based Authorization
 
 - Created custom `IAuthorizationRequirement` (`MinimumAgeRequirement`) and handler (`MinimumAgeHandler`) to support complex, conditional authorization logic (example: minimum age verification)
@@ -136,3 +135,12 @@ Database file `app.db` is now created in the project root with all standard Iden
 - Tested policy enforcement in Swagger:
   - Successful access (200 OK) when policy conditions are met
   - 403 Forbidden response when conditions are not satisfied
+
+### Day 10 – Integrating RBAC with Policy (Full Role-Based Access Control)
+
+- Defined permissions as constants in `Permissions.cs` and stored them as claims on roles
+- Mapped roles to collections of permissions using `RoleClaims` (via `RoleManager.AddClaimAsync`)
+- Dynamically added role-based permission claims to JWT tokens during generation using `RoleManager`
+- Created permission-based policies (e.g., `CanViewUsers`, `CanManageUsers`) that require specific `"Permission"` claims
+- Implemented `PermissionsTestController` with endpoints restricted by permission policies (rather than just roles)
+- Achieved fully dynamic RBAC: new permissions or role changes can be applied without modifying code — only role claims need updating

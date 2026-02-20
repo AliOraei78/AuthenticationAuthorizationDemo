@@ -63,7 +63,7 @@ namespace AuthenticationAuthorizationDemo.Services
                 .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name!)
                 .ToListAsync();
 
-            var newAccessToken = _jwtTokenService.GenerateToken(user, roles);
+            var newAccessToken = await _jwtTokenService.GenerateToken(user);
 
             // Rotation
             storedToken.IsRevoked = true;

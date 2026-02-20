@@ -12,43 +12,64 @@ namespace AuthenticationAuthorizationDemo.Services
     public class JwtTokenService
     {
         private readonly JwtSettings _jwtSettings;
+        private readonly UserManager<IdentityUser> _userManager;     // new
+        private readonly RoleManager<IdentityRole> _roleManager;     // new
 
-        public JwtTokenService(IOptions<JwtSettings> jwtSettings)
+        public JwtTokenService(
+            IOptions<JwtSettings> jwtSettings,
+            UserManager<IdentityUser> userManager,   // new injection
+            RoleManager<IdentityRole> roleManager)   // new injection
         {
             _jwtSettings = jwtSettings.Value;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
-        public string GenerateToken(IdentityUser user, IList<string> roles)
+        public async Task<string> GenerateToken(IdentityUser user)  // ← roles parameter removed
         {
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? string.Empty),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
-                new Claim("auth_time", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
-                new Claim("email_verified", user.EmailConfirmed.ToString().ToLowerInvariant()),
-            };
+            // Get user roles
+            var userRoles = await _userManager.GetRolesAsync(user);
 
-            // Add roles as individual claims (standard for [Authorize(Roles = "...")])
-            foreach (var role in roles)
+            var claims = new List<Claim>
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+            new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? string.Empty),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+            new Claim("auth_time", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+            new Claim("email_verified", user.EmailConfirmed.ToString().ToLowerInvariant()),
+        };
+
+            // Add roles as claims (for [Authorize(Roles = "...")])
+            foreach (var roleName in userRoles)
             {
-                claims.Add(new Claim(ClaimTypes.Role, role));
-                claims.Add(new Claim("DateOfBirth", "1990-01-01"));
+                claims.Add(new Claim(ClaimTypes.Role, roleName));
+
+                // Read role claims (permissions)
+                var role = await _roleManager.FindByNameAsync(roleName);
+                if (role != null)
+                {
+                    var roleClaims = await _roleManager.GetClaimsAsync(role);
+
+                    foreach (var claim in roleClaims.Where(c => c.Type == "Permission"))
+                    {
+                        claims.Add(new Claim("Permission", claim.Value));
+                    }
+                }
             }
 
-            // Optional: Add custom claims if needed later (e.g., department, permissions)
-            // claims.Add(new Claim("department", "Engineering"));
+            // For age testing (you can later read this from a real database)
+            claims.Add(new Claim("DateOfBirth", "1990-01-01"));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256); // HS256 is acceptable with strong key
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: _jwtSettings.Issuer,
                 audience: _jwtSettings.Audience,
                 claims: claims,
-                notBefore: DateTime.UtcNow,                     // Prevent usage before issuance
+                notBefore: DateTime.UtcNow,
                 expires: DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationMinutes),
                 signingCredentials: creds);
 
@@ -70,10 +91,9 @@ namespace AuthenticationAuthorizationDemo.Services
             return Convert.ToBase64String(hashBytes);
         }
 
-        public (string AccessToken, string RefreshToken) GenerateTokenPair(IdentityUser user, IList<string> roles)
+        public async Task<(string AccessToken, string RefreshToken)> GenerateTokenPair(IdentityUser user)
         {
-            var accessToken = GenerateToken(user, roles);
-
+            var accessToken = await GenerateToken(user);
             var refreshToken = GenerateRefreshToken();
 
             return (accessToken, refreshToken);
