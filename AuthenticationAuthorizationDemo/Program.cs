@@ -1,14 +1,15 @@
 using AuthenticationAuthorizationDemo.Configuration;
 using AuthenticationAuthorizationDemo.Data;
+using AuthenticationAuthorizationDemo.Seeders;
 using AuthenticationAuthorizationDemo.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -139,6 +140,8 @@ if (app.Environment.IsDevelopment())
         // Optional: nicer UI settings
         c.RoutePrefix = string.Empty;  // optional: open at root URL /
     });
+    using var scope = app.Services.CreateScope();
+    await IdentityDataSeeder.SeedRolesAndAdminUser(scope.ServiceProvider);
 }
 
 app.UseHttpsRedirection();

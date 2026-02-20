@@ -105,3 +105,17 @@ Database file `app.db` is now created in the project root with all standard Iden
   - Invalid / tampered token
   - Missing or empty refresh token
 - Ensured rotation continues to invalidate previous tokens reliably
+
+### Day 8 – Introduction to Role-Based Authorization
+
+- Created default roles "Admin" and "User" using `RoleManager<IdentityRole>`
+- Implemented initial data seeding for roles and sample users (Admin and User) during application startup (only in Development environment)
+- Utilized the `[Authorize(Roles = "...")]` attribute to restrict access to controller actions based on user roles
+- Added a test controller `RolesTestController` with role-restricted endpoints:
+  - `/admin-only` — accessible only to users in the "Admin" role
+  - `/user-only` — accessible only to users in the "User" role
+  - `/admin-or-user` — accessible to users in either "Admin" or "User" role
+  - `/authenticated-only` — accessible to any authenticated user (no role restriction)
+- Verified role-based access control through comprehensive testing in Swagger:
+  - Successful access with correct role
+  - 403 Forbidden response when role requirements are not met
