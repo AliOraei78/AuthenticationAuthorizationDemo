@@ -153,3 +153,19 @@ Database file `app.db` is now created in the project root with all standard Iden
 - Added basic audit logging for security-sensitive operations (login, refresh, revoke) with user ID and IP address
 - Reviewed and confirmed no sensitive information is exposed in API responses
 - Conducted basic security testing for common vulnerabilities (token replay, tampering, brute force)
+
+### Day 12 – Testing and Debugging
+
+- Created a separate test project using xUnit and Microsoft.AspNetCore.Mvc.Testing
+- Wrote integration tests covering core authentication and authorization flows:
+  - User registration
+  - Login and token issuance
+  - Access to protected endpoints
+  - Token refresh
+- Implemented unit tests for key services (e.g., `JwtTokenService`) using Moq for dependency isolation
+- Tested success and failure scenarios, including:
+  - Valid and invalid tokens
+  - Correct and incorrect role/permission checks
+  - Rate limiting enforcement
+- Executed all tests and reviewed code coverage
+- Identified and fixed any bugs discovered during testing

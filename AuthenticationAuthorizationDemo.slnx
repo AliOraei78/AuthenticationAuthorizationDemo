@@ -2,5 +2,6 @@
   <Folder Name="/Solution Items/">
     <File Path="README.md" />
   </Folder>
+  <Project Path="AuthenticationAuthorizationDemo.Tests/AuthenticationAuthorizationDemo.Tests.csproj" Id="b637c65d-826d-4b3a-a7db-ef5bf0d500b2" />
   <Project Path="AuthenticationAuthorizationDemo/AuthenticationAuthorizationDemo.csproj" />
 </Solution>
