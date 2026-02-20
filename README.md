@@ -119,3 +119,20 @@ Database file `app.db` is now created in the project root with all standard Iden
 - Verified role-based access control through comprehensive testing in Swagger:
   - Successful access with correct role
   - 403 Forbidden response when role requirements are not met
+
+
+### Day 9 – Implementing Policy-Based Authorization
+
+- Created custom `IAuthorizationRequirement` (`MinimumAgeRequirement`) and handler (`MinimumAgeHandler`) to support complex, conditional authorization logic (example: minimum age verification)
+- Registered multiple custom policies in `AuthorizationOptions`:
+  - `AtLeast18` — requires the user to be at least 18 years old based on DateOfBirth claim
+  - `AdminOrOver21` — allows access if the user is in the "Admin" role **or** is at least 21 years old (using multiple handlers for OR logic)
+  - `RequireClaimEmailConfirmed` — requires the presence of an "email_verified" claim with value "true"
+- Added the `DateOfBirth` claim to JWT tokens during generation for testing age-based policies
+- Implemented `PolicyTestController` with endpoints protected by custom policies:
+  - `/adults-only` — enforces `AtLeast18`
+  - `/admin-or-over21` — enforces `AdminOrOver21`
+  - `/email-confirmed` — enforces `RequireClaimEmailConfirmed`
+- Tested policy enforcement in Swagger:
+  - Successful access (200 OK) when policy conditions are met
+  - 403 Forbidden response when conditions are not satisfied

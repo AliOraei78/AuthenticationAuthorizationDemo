@@ -27,13 +27,15 @@ namespace AuthenticationAuthorizationDemo.Services
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
-                new Claim("auth_time", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+                new Claim("auth_time", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+                new Claim("email_verified", user.EmailConfirmed.ToString().ToLowerInvariant()),
             };
 
             // Add roles as individual claims (standard for [Authorize(Roles = "...")])
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
+                claims.Add(new Claim("DateOfBirth", "1990-01-01"));
             }
 
             // Optional: Add custom claims if needed later (e.g., department, permissions)

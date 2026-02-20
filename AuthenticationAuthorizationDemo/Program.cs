@@ -1,8 +1,10 @@
+using AuthenticationAuthorizationDemo.Authorization;
 using AuthenticationAuthorizationDemo.Configuration;
 using AuthenticationAuthorizationDemo.Data;
 using AuthenticationAuthorizationDemo.Seeders;
 using AuthenticationAuthorizationDemo.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -126,6 +128,22 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOrOver21", policy =>
+        policy.Requirements.Add(new MinimumAgeRequirement(21)));
+
+    // Other policies remain unchanged
+    options.AddPolicy("AtLeast18", policy =>
+        policy.Requirements.Add(new MinimumAgeRequirement(18)));
+
+    options.AddPolicy("RequireClaimEmailConfirmed", policy =>
+        policy.RequireClaim("email_verified", "true"));
+});
+
+builder.Services.AddSingleton<IAuthorizationHandler, MinimumAgeHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, AdminAsAgeBypassHandler>();
 
 var app = builder.Build();
 
